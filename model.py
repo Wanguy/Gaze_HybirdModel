@@ -12,7 +12,7 @@ import copy
 
 from resnet import resnet18
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def _get_clones(module, N):

@@ -2,12 +2,13 @@
 train:
 
     params:
-        batch_size: 128
-        epoch: &end_step 50
+        batch_size: 64
+        epoch: &end_step 10
         lr: 0.0005
         decay: 0.5
-        decay_step: 10
-        warmup: 3
+        decay_step: 3
+        #warmup: 3
+        warmup: 0
 
     save:
         metapath: "/home/rp/datasets/Output/hybird"
@@ -17,10 +18,10 @@ train:
 
     data:
         image: "/home/rp/datasets/FaceBased/ETH-Gaze/Image/train"
-        label: "/home/rp/datasets/FaceBased/ETH-Gaze/Label/train.label"
+        label: "/home/rp/datasets/FaceBased/ETH-Gaze/Label"
         header: True
         name: eth
-        isFolder: False
+        isFolder: True
 
     pretrain:
         enable: False
@@ -28,6 +29,8 @@ train:
         device: PLACEHOLDER
 
     device: 0
+
+    ave_loss: 1000
 
     reader: reader
 
@@ -40,10 +43,10 @@ test:
 
     data:
         image: "/home/rp/datasets/FaceBased/ETH-Gaze/Image/test"
-        label: "/home/rp/datasets/FaceBased/ETH-Gaze/Label/test.label"
+        label: "/home/rp/datasets/FaceBased/ETH-Gaze/Label"
         name: eth
         header: True
-        isFolder: False
+        isFolder: True
 
     savename: "evaluation"
 

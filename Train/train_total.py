@@ -32,6 +32,8 @@ def main(config):
     data = config.data
     save = config.save
     params = config.params
+    average_loss_num = config.ave_loss
+    print(average_loss_num)
 
     writer = SummaryWriter()
 
@@ -125,7 +127,8 @@ def main(config):
                     outfile.write(log + "\n")
                     sys.stdout.flush()
                     outfile.flush()
-
+		
+		        # Calculate the average loss
                 if i % 340 == 339:
                     writer.add_scalar(
                         'Train loss',
