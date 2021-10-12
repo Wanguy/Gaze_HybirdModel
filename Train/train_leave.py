@@ -15,6 +15,7 @@ from easydict import EasyDict as edict
 import torch.backends.cudnn as cudnn
 from warmup_scheduler import GradualWarmupScheduler
 import argparse
+from torch.utils.tensorboard import SummaryWriter
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -29,6 +30,9 @@ def main(config):
     data = config.data
     save = config.save
     params = config.params
+    average_loss_num = config.ave_loss
+
+    writer = SummaryWriter()
 
     print("========================> Read Data <========================")
     data, folder = ctools.readfolder(data, [config.person], reverse=True)
@@ -78,6 +82,8 @@ def main(config):
     with open(os.path.join(save_path, "train_log"), "w") as outfile:
         outfile.write(ctools.DictDumps(config) + "\n")
 
+        running_loss = 0.0
+
         for epoch in range(1, params.epoch + 1):
             for i, (data, label) in enumerate(dataset):
 
@@ -99,6 +105,8 @@ def main(config):
 
                 optimizer.step()
 
+                running_loss += loss.item()
+
                 rest = timer.step() / 3600
 
                 # -----------------loger----------------------
@@ -115,6 +123,15 @@ def main(config):
                     outfile.write(log + "\n")
                     sys.stdout.flush()
                     outfile.flush()
+
+                # Calculate the average loss, you should modify average_loss_num in config file.
+                if i % average_loss_num == average_loss_num - 1:
+                    writer.add_scalar(
+                        'Train loss',
+                        running_loss / average_loss_num,
+                        epoch * len(dataset) + i
+                    )
+                    running_loss = 0.0
 
             scheduler.step()
 

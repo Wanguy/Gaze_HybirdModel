@@ -29,6 +29,8 @@ train:
 
     device: 0
 
+    ave_loss: 1000
+
     reader: reader
 
 test:

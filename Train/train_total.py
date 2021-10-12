@@ -32,6 +32,7 @@ def main(config):
     data = config.data
     save = config.save
     params = config.params
+    average_loss_num = config.ave_loss
 
     writer = SummaryWriter()
 
@@ -125,13 +126,15 @@ def main(config):
                     outfile.write(log + "\n")
                     sys.stdout.flush()
                     outfile.flush()
-
-                if i % 340 == 339:
+		
+		        # Calculate the average loss, you should modify average_loss_num in config file.
+                if i % average_loss_num == average_loss_num - 1:
                     writer.add_scalar(
                         'Train loss',
-                        running_loss / 340,
+                        running_loss / average_loss_num,
                         epoch * len(dataset) + i
                     )
+                    running_loss = 0.0
 
             scheduler.step()
 

@@ -12,7 +12,8 @@ from swin_transformer_pytorch import swin_t, SwinTransformer
 import torch.nn.functional as F
 from resnet import resnet18
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 
 def _get_clones(module, N):
