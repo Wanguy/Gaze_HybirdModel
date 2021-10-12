@@ -8,11 +8,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import copy
-
-
+from swin_transformer_pytorch import swin_t, SwinTransformer
+import torch.nn.functional as F
 from resnet import resnet18
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 
 def _get_clones(module, N):
@@ -74,6 +75,26 @@ class TransformerEncoderLayer(nn.Module):
         return src
 
 
+
+# class SwinTransformer(nn.Module):
+#     def __init__(self,channel,window_size):
+#         super().__init__()
+#         self.feats = []
+#         self.encoder = swin_t(channels=3,window_size=7)
+#         self.encoder.stage1.register_forward_hook(self.hook)
+#         self.encoder.stage2.register_forward_hook(self.hook)
+#         self.encoder.stage3.register_forward_hook(self.hook)
+#         self.encoder.stage4.register_forward_hook(self.hook)
+#
+#     def hook(self, model, input, output):
+#         self.feats.append(output)
+#
+#     def forward(self, x):
+#         self.feats = [x]
+#         _ = self.encoder(x)
+#         output = self.feats[-1]
+#         return output
+
 class Model(nn.Module):
     def __init__(self):
         super(Model, self).__init__()
@@ -101,28 +122,45 @@ class Model(nn.Module):
 
         self.feed = nn.Linear(2 * maps, 2)
 
+        swinNet = SwinTransformer(
+            hidden_dim=128,
+            layers=(2, 2, 6, 2),
+            heads=(3, 6, 12, 24),
+            channels=3,
+            num_classes=50,
+            head_dim=32,
+            window_size=7,
+            downscaling_factors=(4, 2, 2, 2),
+            relative_pos_embedding=True
+        )
+        # self.encoder = swin_t(channels=128,window_size=4)
+        self.swin = swinNet
+
     def forward(self, input):
+
+        tr_feature = self.swin(input)
+
         feature = self.base_model(input)
         batch_size = feature.size(0)
         feature = feature.flatten(2)
 
-        # --------------------- Transformer ---------------------
-        tr_feature = feature.permute(2, 0, 1)  # HW * B * C
-
-        cls = self.cls_token.repeat((1, batch_size, 1))
-        tr_feature = torch.cat([cls, tr_feature], 0)
-
-        position = torch.from_numpy(np.arange(0, 50)).to(device)
-
-        pos_feature = self.pos_embedding(position)
-
-        # feature is [HW, batch, channel]
-        tr_feature = self.encoder(tr_feature, pos_feature)
-
-        tr_feature = tr_feature.permute(1, 2, 0)
-
-        tr_feature = tr_feature[:, :, 0]
-        # --------------------- Transformer ---------------------
+        # # --------------------- Transformer ---------------------
+        # tr_feature = feature.permute(2, 0, 1)  # HW * B * C
+        #
+        # cls = self.cls_token.repeat((1, batch_size, 1))
+        # tr_feature = torch.cat([cls, tr_feature], 0)
+        #
+        # position = torch.from_numpy(np.arange(0, 50)).to(device)
+        #
+        # pos_feature = self.pos_embedding(position)
+        #
+        # # feature is [HW, batch, channel]
+        # tr_feature = self.encoder(tr_feature, pos_feature)
+        #
+        # tr_feature = tr_feature.permute(1, 2, 0)
+        #
+        # tr_feature = tr_feature[:, :, 0]
+        # # --------------------- Transformer ---------------------
 
         # --------------------- LSTM ---------------------
         lstm_feature, _ = self.lstm(feature)
