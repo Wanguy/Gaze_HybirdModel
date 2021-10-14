@@ -105,7 +105,7 @@ def main(train, test):
                     log = name + [",".join(gaze)] + [",".join(ground_truth)]
                     outfile.write(" ".join(log) + "\n")
 
-            writer.add_scalars(
+            writer.add_scalar(
                 'Avg',
                 {'valid': accs / count},
                 saveiter
