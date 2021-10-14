@@ -126,8 +126,8 @@ def main(config):
                     outfile.write(log + "\n")
                     sys.stdout.flush()
                     outfile.flush()
-		
-		        # Calculate the average loss, you should modify average_loss_num in config file.
+
+                    # Calculate the average loss, you should modify average_loss_num in config file.
                 if i % average_loss_num == average_loss_num - 1:
                     writer.add_scalar(
                         'Train loss',

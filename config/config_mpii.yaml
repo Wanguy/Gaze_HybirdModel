@@ -2,7 +2,7 @@
 train:
 
     params:
-        batch_size: 128
+        batch_size: 64
         epoch: &end_step 80 
         lr: 0.0005
         decay: 0.5
@@ -29,7 +29,7 @@ train:
 
     device: 0
 
-    ave_loss: 1000
+    ave_loss: 300
 
     reader: reader
 
