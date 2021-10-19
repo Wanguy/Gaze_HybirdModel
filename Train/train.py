@@ -7,15 +7,17 @@ import model
 import importlib
 import numpy as np
 import torch
+import cv2
 import torch.nn as nn
 import torch.optim as optim
+import copy
 import yaml
 import ctools
 from easydict import EasyDict as edict
 import torch.backends.cudnn as cudnn
 from warmup_scheduler import GradualWarmupScheduler
-import argparse
 from torch.utils.tensorboard import SummaryWriter
+import argparse
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -35,13 +37,23 @@ def main(config):
     writer = SummaryWriter()
 
     print("========================> Read Data <========================")
-    data, folder = ctools.readfolder(data, [config.person], reverse=True)
+    if config.person is not None:
+        if data.isFolder:
+            data, folder = ctools.readfolder(data, [config.person], reverse=True)
 
-    save_name = folder[config.person]
+        save_name = folder[config.person]
 
-    dataset = dataloader.loader(data, params.batch_size, shuffle=True, num_workers=6)
+        dataset = dataloader.loader(data, params.batch_size, shuffle=True, num_workers=6)
 
-    save_path = os.path.join(save.metapath, save.folder, f"checkpoint/{save_name}")
+        save_path = os.path.join(save.metapath, save.folder, f"checkpoint/{save_name}")
+
+    else:
+        if data.isFolder:
+            data, _ = ctools.readfolder(data)
+
+        dataset = dataloader.loader(data, params.batch_size, shuffle=True, num_workers=8)
+
+        save_path = os.path.join(save.metapath, save.folder, "checkpoint")
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -60,7 +72,10 @@ def main(config):
     #     net.load_state_dict(torch.load(pretrain.path))
 
     print("========================> Optimizer Building <========================")
-    optimizer = optim.Adam(net.parameters(), lr=params.lr, betas=(0.9, 0.95))
+    if config.person is not None:
+        optimizer = optim.Adam(net.parameters(), lr=params.lr, betas=(0.9, 0.95))
+    else:
+        optimizer = optim.Adam(net.parameters(), lr=params.lr, betas=(0.9, 0.999))
 
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=params.decay_step, gamma=params.decay)
 
@@ -88,8 +103,10 @@ def main(config):
             for i, (data, label) in enumerate(dataset):
 
                 # ------------------forward--------------------
-                data["face"] = data["face"].to(device)
-
+                # data["face"] = data["face"].to(device)
+                for key in data:
+                    if key != 'name':
+                        data[key] = data[key].to(device)
                 label = label.to(device)
 
                 out = net(data['face']).to(device)
@@ -124,7 +141,7 @@ def main(config):
                     sys.stdout.flush()
                     outfile.flush()
 
-                # Calculate the average loss, you should modify average_loss_num in config file.
+                    # Calculate the average loss, you should modify average_loss_num in config file.
                 if i % average_loss_num == average_loss_num - 1:
                     writer.add_scalar(
                         'Train loss',
@@ -144,7 +161,7 @@ if __name__ == '__main__':
 
     parser.add_argument("-c", "--config", type=str, help="The source config for training.")
 
-    parser.add_argument("-p", "--person", type=int, help="The tested person.")
+    parser.add_argument("-p", "--person", default=None, type=int, help="The trained person.")
 
     args = parser.parse_args()
 
@@ -158,6 +175,6 @@ if __name__ == '__main__':
 
     print(ctools.DictDumps(config))
 
-    print("=====================>> (End) Traning params << =======================")
+    print("=====================>> (End) Training params << =======================")
 
     main(config)

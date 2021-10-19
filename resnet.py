@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 
-model_urls = {"resnet18": "file:///home/rp/Develop/Gaze360/resnet18-5c106cde.pth"}
+model_urls = {"resnet18": "file:///home/rp/datasets/resnet18-5c106cde.pth"}
 
 
 def conv3x3(in_planes, out_planes, stride=1):
