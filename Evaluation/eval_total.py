@@ -14,7 +14,7 @@ import ctools, gtools
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 
-device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def main(train, test):
@@ -105,7 +105,7 @@ def main(train, test):
                     log = name + [",".join(gaze)] + [",".join(ground_truth)]
                     outfile.write(" ".join(log) + "\n")
 
-            writer.add_scalar(
+            writer.add_scalars(
                 'Avg',
                 {'valid': accs / count},
                 saveiter
