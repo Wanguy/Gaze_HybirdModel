@@ -12,8 +12,7 @@ from swin_transformer_pytorch import swin_t, SwinTransformer
 import torch.nn.functional as F
 from resnet import resnet18
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 def _get_clones(module, N):
@@ -107,20 +106,21 @@ class Model(nn.Module):
 
         self.base_model = resnet18(True, maps=maps)
 
-        encoder_layer = TransformerEncoderLayer(maps, nhead, dim_feedforward, dropout)
+        #encoder_layer = TransformerEncoderLayer(maps, nhead, dim_feedforward, dropout)
 
         encoder_norm = nn.LayerNorm(maps)
         # num_encoder_layer: deeps of layers
 
-        self.encoder = TransformerEncoder(encoder_layer, num_layers, encoder_norm)
+        #self.encoder = TransformerEncoder(encoder_layer, num_layers, encoder_norm)
 
-        self.cls_token = nn.Parameter(torch.randn(1, 1, maps))
+        #self.cls_token = nn.Parameter(torch.randn(1, 1, maps))
 
-        self.pos_embedding = nn.Embedding(dim_feature + 1, maps)
+        #self.pos_embedding = nn.Embedding(dim_feature + 1, maps)
 
         self.lstm = nn.LSTM(dim_feature, dim_feature, 2, bidirectional=True, batch_first=True)
 
         self.feed = nn.Linear(2 * maps, 2)
+        self.feed2 = nn.Linear(82,2)
 
         swinNet = SwinTransformer(
             hidden_dim=128,
@@ -166,8 +166,9 @@ class Model(nn.Module):
         lstm_feature, _ = self.lstm(feature)
         lstm_feature = lstm_feature[:, :, -1]
         # --------------------- LSTM ---------------------
-
+        
         all_feature = torch.cat([tr_feature, lstm_feature], 1)
-        gaze = self.feed(all_feature)
+        gaze = self.feed2(all_feature)
 
         return gaze
+
