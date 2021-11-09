@@ -19,5 +19,5 @@ def angular(gaze, label):
     assert gaze.shape == torch.Size([3, 1]), "The size of gaze must be 3"
     assert label.shape == torch.Size([3, 1]), "The size of label must be 3"
 
-    total = torch.sum(torch.mm(gaze, label.t()))
+    total = torch.sum(torch.mul(gaze, label))
     return (torch.arccos(torch.min(total / (torch.norm(gaze) * torch.norm(label)), torch.tensor(.9999999))) * 180 / np.pi).item()
