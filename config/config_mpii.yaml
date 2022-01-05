@@ -2,7 +2,7 @@
 train:
 
     params:
-        batch_size: 64
+        batch_size: 20
         epoch: &end_step 80 
         lr: 0.0005
         decay: 0.5
@@ -10,7 +10,7 @@ train:
         warmup: 5
 
     save:
-        metapath: "/home/rp/datasets/Output/hybird"
+        metapath: "/home/rp/datasets/Output/HybirdGaze"
         folder: mpii
         model_name: trans6
         step: 10

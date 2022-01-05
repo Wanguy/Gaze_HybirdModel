@@ -2,7 +2,7 @@
 train:
 
     params:
-        batch_size: 64
+        batch_size: 20
         epoch: &end_step 10
         lr: 0.0005
         decay: 0.5
@@ -11,17 +11,17 @@ train:
         warmup: 0
 
     save:
-        metapath: "/home/rp/datasets/Output/hybird"
-        folder: eth
+        metapath: "/home/rp/datasets/Output/HybirdGaze"
+        folder: eth/swin
         model_name: trans6
         step: 5
 
     data:
-        image: "/home/rp/datasets/FaceBased/ETH-Gaze/Image/train"
-        label: "/home/rp/datasets/FaceBased/ETH-Gaze/Label"
+        image: "/home/rp/datasets/FaceBased/ETH-Gaze/train"
+        label: "/home/rp/datasets/FaceBased/ETH-Gaze/train.label"
         header: True
         name: eth
-        isFolder: True
+        isFolder: False
 
     pretrain:
         enable: False
@@ -42,11 +42,11 @@ test:
         steps: 10
 
     data:
-        image: "/home/rp/datasets/FaceBased/ETH-Gaze/Image/test"
-        label: "/home/rp/datasets/FaceBased/ETH-Gaze/Label"
-        name: eth
+        image: "/home/rp/datasets/FaceBased/ETH-Gaze/test"
+        label: "/home/rp/datasets/FaceBased/ETH-Gaze/test.label"
+        name: eth/swin
         header: True
-        isFolder: True
+        isFolder: False
 
     savename: "evaluation"
 

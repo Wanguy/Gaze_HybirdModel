@@ -3,7 +3,7 @@ import sys, os
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
-import model
+import model1 as model
 import importlib
 import numpy as np
 import torch

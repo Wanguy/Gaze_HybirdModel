@@ -2,14 +2,15 @@ import os, sys
 
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
-import model1
+import model as model
 import importlib
 import numpy as np
 import torch
 from torch import nn, optim
 import cv2, yaml, copy
 from easydict import EasyDict as edict
-import ctools, gtools1
+import ctools
+import gtools as gtools
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 
@@ -68,7 +69,7 @@ def main(train, test):
         print(f"Test {saveiter}")
 
         # ----------------------Load Model------------------------------
-        net = model1.Model()
+        net = model.Model()
         # net = nn.DataParallel(net, device_ids=[0, 1, 2])
 
         state_dict = torch.load(
@@ -104,13 +105,17 @@ def main(train, test):
                 gazes = net(data['face'])
 
                 for k, gaze in enumerate(gazes):
+
+                    gaze = gaze.cpu().detach().numpy()
+                    ground_truth = ground_truths.cpu().numpy()[k]
+
                     
-                    ground_truth = ground_truths[k]
+                    # ground_truth = ground_truths[k]
 
                     count += 1
-                    accs += gtools1.angular(
-                        gtools1.gazeto3d(gaze),
-                        gtools1.gazeto3d(ground_truth)
+                    accs += gtools.angular(
+                        gtools.gazeto3d(gaze),
+                        gtools.gazeto3d(ground_truth)
                     )
 
                     name = [names[k]]
