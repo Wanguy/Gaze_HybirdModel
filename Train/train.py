@@ -3,7 +3,7 @@ import sys, os
 base_dir = os.getcwd()
 sys.path.insert(0, base_dir)
 
-import model1 as model
+import model as model
 import importlib
 import numpy as np
 import torch
@@ -19,14 +19,15 @@ from warmup_scheduler import GradualWarmupScheduler
 from torch.utils.tensorboard import SummaryWriter
 import argparse
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main(config):
     # ===============================> Setup <================================
 
     dataloader = importlib.import_module("reader." + config.reader)
-    # torch.cuda.set_device(config.device)
+    device = torch.device(config.device)
+    torch.cuda.set_device(device)
     cudnn.benchmark = True
 
     data = config.data
@@ -101,7 +102,8 @@ def main(config):
 
         for epoch in range(1, params.epoch + 1):
             for i, (data, label) in enumerate(dataset):
-
+                if i >= 1000:
+                    break
                 # ------------------forward--------------------
                 # data["face"] = data["face"].to(device)
                 for key in data:
@@ -163,6 +165,8 @@ if __name__ == '__main__':
 
     parser.add_argument("-p", "--person", default=None, type=int, help="The trained person.")
 
+    parser.add_argument("-d", "--device", default=None, type=int, help="The training device No.")
+
     args = parser.parse_args()
 
     config = edict(yaml.load(open(args.config), Loader=yaml.FullLoader))
@@ -170,6 +174,10 @@ if __name__ == '__main__':
     config = config.train
 
     config.person = args.person
+
+    config.device = args.device
+
+    print(args.device)
 
     print("=====================>> (Begin) Training params << =======================")
 

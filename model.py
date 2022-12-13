@@ -29,7 +29,7 @@ class TransformerEncoder(nn.Module):
     def forward(self, src, pos):
         output = src
         for layer in self.layers:
-            output = layer(output, pos)
+            output = layer(output)
 
         if self.norm is not None:
             output = self.norm(output)
@@ -58,12 +58,14 @@ class TransformerEncoderLayer(nn.Module):
         batch_pos = pos.unsqueeze(1).repeat(1, src.size(1), 1)
         return src + batch_pos
 
-    def forward(self, src, pos):
+    def forward(self, src):
         # src_mask: Optional[Tensor] = None,
         # src_key_padding_mask: Optional[Tensor] = None):
         # pos: Optional[Tensor] = None):
 
-        q = k = self.pos_embed(src, pos)
+        # q = k = self.pos_embed(src, pos)
+        q = src
+        k = src
         src2 = self.self_attn(q, k, value=src)[0]
         src = src + self.dropout1(src2)
         src = self.norm1(src)
@@ -86,50 +88,59 @@ class Model(nn.Module):
 
         self.base_model = resnet18(True, maps=maps)
 
-        encoder_layer = TransformerEncoderLayer(maps, nhead, dim_feedforward, dropout)
+        encoder_layer = TransformerEncoderLayer(maps * dim_feature, nhead, dim_feedforward, dropout)
 
-        encoder_norm = nn.LayerNorm(maps)
+        encoder_norm = nn.LayerNorm(maps * dim_feature)
         # num_encoder_layer: deeps of layers
 
         self.encoder = TransformerEncoder(encoder_layer, num_layers, encoder_norm)
 
         self.cls_token = nn.Parameter(torch.randn(1, 1, maps))
 
-        self.pos_embedding = nn.Embedding(dim_feature + 1, maps)
+        # self.pos_embedding = nn.Embedding(dim_feature + 1, maps)
 
-        self.lstm = nn.LSTM(dim_feature, dim_feature, 2, bidirectional=True, batch_first=True)
+        self.lstm = nn.LSTM(maps * dim_feature, maps * dim_feature, 2, bidirectional=False, batch_first=True)
 
-        self.feed = nn.Linear(2 * maps, 2)
+        self.linear1 = nn.Linear(maps * dim_feature, maps * dim_feature)
+
+        self.feed = nn.Linear(maps * dim_feature, 2)
 
     def forward(self, input):
+        # print(input.size())
         feature = self.base_model(input)
+        # print(feature.size())
         batch_size = feature.size(0)
-        feature = feature.flatten(2)
+        feature = feature.flatten(1)
+        feature = self.linear1(feature)
 
-        # --------------------- Transformer ---------------------
-        tr_feature = feature.permute(2, 0, 1)  # HW * B * C
-
-        cls = self.cls_token.repeat((1, batch_size, 1))
-        tr_feature = torch.cat([cls, tr_feature], 0)
-
-        position = torch.from_numpy(np.arange(0, 50)).to(device)
-
-        pos_feature = self.pos_embedding(position)
-
-        # feature is [HW, batch, channel]
-        tr_feature = self.encoder(tr_feature, pos_feature)
-
-        tr_feature = tr_feature.permute(1, 2, 0)
-
-        tr_feature = tr_feature[:, :, 0]
-        # --------------------- Transformer ---------------------
 
         # --------------------- LSTM ---------------------
         lstm_feature, _ = self.lstm(feature)
-        lstm_feature = lstm_feature[:, :, -1]
+        # lstm_feature = lstm_feature[-1, :]
         # --------------------- LSTM ---------------------
 
-        all_feature = torch.cat([tr_feature, lstm_feature], 1)
-        gaze = self.feed(all_feature)
+        # --------------------- Transformer ---------------------
+        # tr_feature = feature.permute(2, 0, 1)  # HW * B * C
+
+        # cls = self.cls_token.repeat((1, batch_size, 1))
+        # tr_feature = torch.cat([cls, tr_feature], 0)
+
+        # position = torch.from_numpy(np.arange(0, 50)).to(device)
+
+        # pos_feature = self.pos_embedding(position)
+
+        # feature is [HW, batch, channel]
+        # tr_feature = self.encoder(tr_feature, pos_feature)
+        tr_feature = self.encoder(lstm_feature, None)
+
+        # tr_feature = tr_feature.permute(1, 2, 0)
+
+        tr_feature = tr_feature[-1,:]
+        # --------------------- Transformer ---------------------
+
+        # all_feature = torch.cat([tr_feature, lstm_feature], 1)
+        # gaze = self.feed(all_feature)
+
+        gaze = self.feed(tr_feature)
 
         return gaze

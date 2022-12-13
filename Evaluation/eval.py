@@ -14,7 +14,7 @@ import gtools as gtools
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device(1 if torch.cuda.is_available() else "cpu")
 
 
 def main(train, test):
@@ -46,7 +46,7 @@ def main(train, test):
             data, _ = ctools.readfolder(data)
 
         
-        dataset = reader.loader(data, 32, num_workers=4, shuffle=False)
+        dataset = reader.loader(data, 4, num_workers=4, shuffle=False)
 
         model_path = os.path.join(train.save.metapath,
                                 train.save.folder, 'checkpoint')
@@ -103,13 +103,15 @@ def main(train, test):
 
                 ground_truths = label.to(device)
                 gazes = net(data['face'])
+                gazes.reshape(1,2)
+                print(gazes.size())
 
                 for k, gaze in enumerate(gazes):
-
+                
                     gaze = gaze.cpu().detach().numpy()
                     ground_truth = ground_truths.cpu().numpy()[k]
 
-                    
+                    print(gaze)    
                     # ground_truth = ground_truths[k]
 
                     count += 1
@@ -143,6 +145,9 @@ if __name__ == "__main__":
 
     parser.add_argument("-p", "--person", default=None, type=int, help="The tested person.")
 
+    parser.add_argument("-d", "--device", default=None, type=int, help="The training device No.")
+
+
     args = parser.parse_args()
     # Read model from train config and Test data in test config.
     config = edict(yaml.load(open(args.config), Loader=yaml.FullLoader))
@@ -152,6 +157,8 @@ if __name__ == "__main__":
     test_config = config.test
 
     test_config.person = args.person
+
+    config.device = args.device
 
     print("=======================>(Begin) Config of training<======================")
 

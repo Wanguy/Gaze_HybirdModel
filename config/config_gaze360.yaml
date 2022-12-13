@@ -1,0 +1,58 @@
+---
+train:
+
+    params:
+        batch_size: 4
+        epoch: &end_step 40
+        lr: 0.0005
+        decay: 0.5
+        decay_step: 3
+        #warmup: 3
+        warmup: 0
+
+    save:
+        metapath: "/home/zjx/Gaze/Output/HybirdGaze"
+        folder: gaze360
+        model_name: trans6
+        step: 5
+
+    data:
+        image: "/home/zjx/Gaze/Datasets/gaze360_processed/Image"
+        label: "/home/zjx/Gaze/Datasets/gaze360_processed/Label/train.label"
+        header: True
+        name: gaze360
+        isFolder: False
+
+    pretrain:
+        enable: False
+        path: PLACEHOLDER
+        device: PLACEHOLDER
+
+    device: 0
+
+    ave_loss: 1000
+
+    reader: reader
+
+test:
+
+    load:
+        begin_step: 10
+        end_step: *end_step
+        steps: 10
+
+    data:
+        image: "/home/zjx/Gaze/Datasets/gaze360_processed/Image"
+        label: "/home/zjx/Gaze/Datasets/gaze360_processed/Label/test.label"
+        name: gaze360
+        header: True
+        isFolder: False
+
+    savename: "evaluation"
+
+    device: 0
+
+    reader: reader
+
+# dropout = 0
+# dim_feed = 512
