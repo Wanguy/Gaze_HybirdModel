@@ -2,23 +2,22 @@
 train:
 
     params:
-        batch_size: 4
-        epoch: &end_step 40
-        lr: 0.0005
-        decay: 0.5
-        decay_step: 3
-        #warmup: 3
+        batch_size: 100
+        epoch: &end_step 200
+        lr: 0.0001
+        decay: 0.8
+        decay_step: 10
         warmup: 0
 
     save:
         metapath: "/home/zjx/Gaze/Output/HybirdGaze"
-        folder: gaze360
+        folder: gaze360_1000
         model_name: trans6
         step: 5
 
     data:
-        image: "/home/zjx/Gaze/Datasets/gaze360_processed/Image"
-        label: "/home/zjx/Gaze/Datasets/gaze360_processed/Label/train.label"
+        image: "/home/zjx/Gaze/Datasets/gaze360_processed_1/Image"
+        label: "/home/zjx/Gaze/Datasets/gaze360_processed_1/Label/train.label"
         header: True
         name: gaze360
         isFolder: False
@@ -42,8 +41,8 @@ test:
         steps: 10
 
     data:
-        image: "/home/zjx/Gaze/Datasets/gaze360_processed/Image"
-        label: "/home/zjx/Gaze/Datasets/gaze360_processed/Label/test.label"
+        image: "/home/zjx/Gaze/Datasets/gaze360_processed_1/Image"
+        label: "/home/zjx/Gaze/Datasets/gaze360_processed_1/Label/test.label"
         name: gaze360
         header: True
         isFolder: False

@@ -40,7 +40,7 @@ class TransformerEncoder(nn.Module):
 class TransformerEncoderLayer(nn.Module):
     def __init__(self, d_model, nhead, dim_feedforward=512, dropout=0.1):
         super().__init__()
-        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.self_attn = nn.MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=True)
         # Implementation of Feedforward model
         self.linear1 = nn.Linear(d_model, dim_feedforward)
         self.dropout = nn.Dropout(dropout)
@@ -64,15 +64,30 @@ class TransformerEncoderLayer(nn.Module):
         # pos: Optional[Tensor] = None):
 
         # q = k = self.pos_embed(src, pos)
-        q = src
+
+        #### q.size() = (batch_size, 1, feature_dims)
+        q = src[:,-1,:].unsqueeze(1)
         k = src
-        src2 = self.self_attn(q, k, value=src)[0]
-        src = src + self.dropout1(src2)
+        attn_featrue = self.self_attn(q, k, value=src)[0]
+        src = src[:,-1,:].unsqueeze(1) + self.dropout1(attn_featrue)
+        # src = self.dropout1(attn_featrue)
+        src = src.squeeze(1)
         src = self.norm1(src)
 
-        src2 = self.linear2(self.dropout(self.activation(self.linear1(src))))
-        src = src + self.dropout2(src2)
-        src = self.norm2(src)
+        src = self.linear2(self.activation(self.linear1(src)))
+        # src = src + self.dropout2(linear_src)
+        # src = self.norm2(src)
+
+        #### q.size() = (batch_size, sequence_len, feature_dims)
+        # q = src
+        # k = src
+        # attn_featrue = self.self_attn(q, k, value=src)[0]
+        # src = src + self.dropout1(attn_featrue)
+        # # src = self.norm1(src)
+        # src = self.linear2(self.activation(self.linear1(src)))
+
+        # src = src + self.dropout2(src2)
+        # src = self.norm2(src)
         return src
 
 
@@ -84,7 +99,7 @@ class Model(nn.Module):
         dim_feature = 7 * 7
         dim_feedforward = 512
         dropout = 0.1
-        num_layers = 6
+        num_layers = 1
 
         self.base_model = resnet18(True, maps=maps)
 
@@ -102,16 +117,35 @@ class Model(nn.Module):
         self.lstm = nn.LSTM(maps * dim_feature, maps * dim_feature, 2, bidirectional=False, batch_first=True)
 
         self.linear1 = nn.Linear(maps * dim_feature, maps * dim_feature)
+        self.norm1 = nn.LayerNorm(maps * dim_feature)
+
 
         self.feed = nn.Linear(maps * dim_feature, 2)
 
+        # self.linear1 = nn.Linear(d_model, dim_feedforward)
+        # self.dropout = nn.Dropout(dropout)
+        # self.linear2 = nn.Linear(dim_feedforward, d_model)
+
+        # self.norm1 = nn.LayerNorm(d_model)
+        # self.norm2 = nn.LayerNorm(d_model)
+
+        # self.dropout1 = nn.Dropout(dropout)
+        # self.dropout2 = nn.Dropout(dropout)
+
+        self.activation = nn.ReLU(inplace=True)
+
     def forward(self, input):
         # print(input.size())
+        batch_size = input.size(0)
+        seq_num = input.size(1)
+        input = torch.flatten(input, start_dim=0, end_dim=1)
         feature = self.base_model(input)
-        # print(feature.size())
-        batch_size = feature.size(0)
         feature = feature.flatten(1)
-        feature = self.linear1(feature)
+        # feature = self.linear1(feature)
+
+        feature = self.norm1(self.activation(self.linear1(feature)))
+
+        feature = torch.reshape(feature, (batch_size, seq_num, feature.size(1)))
 
 
         # --------------------- LSTM ---------------------
@@ -135,12 +169,11 @@ class Model(nn.Module):
 
         # tr_feature = tr_feature.permute(1, 2, 0)
 
-        tr_feature = tr_feature[-1,:]
+        # tr_feature = tr_feature[:, -1,:]
         # --------------------- Transformer ---------------------
 
         # all_feature = torch.cat([tr_feature, lstm_feature], 1)
         # gaze = self.feed(all_feature)
-
         gaze = self.feed(tr_feature)
 
         return gaze

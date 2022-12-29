@@ -14,7 +14,7 @@ import gtools as gtools
 import argparse
 from torch.utils.tensorboard import SummaryWriter
 
-device = torch.device(1 if torch.cuda.is_available() else "cpu")
+device = torch.device(0 if torch.cuda.is_available() else "cpu")
 
 
 def main(train, test):
@@ -60,6 +60,7 @@ def main(train, test):
 
     # =============================> Test <==============================
     print("========================> Testing <========================")
+    loss_func = nn.MSELoss(reduction='sum')
 
     begin = load.begin_step
     end = load.end_step
@@ -83,6 +84,7 @@ def main(train, test):
         # length = len(dataset)
         accs = 0
         count = 0
+        sum_loss = 0
 
         # -----------------------Open log file--------------------------------
         log_name = f"{saveiter}.log"
@@ -102,16 +104,18 @@ def main(train, test):
                 names = data["name"]
 
                 ground_truths = label.to(device)
-                gazes = net(data['face'])
-                gazes.reshape(1,2)
-                print(gazes.size())
+                gazes = net(data['face']).to(device)
+                loss = loss_func(gazes, ground_truths).to(device)
+
+                sum_loss += loss.item()
+                # print(gazes.size())
 
                 for k, gaze in enumerate(gazes):
                 
                     gaze = gaze.cpu().detach().numpy()
                     ground_truth = ground_truths.cpu().numpy()[k]
 
-                    print(gaze)    
+                    # print(gaze)    
                     # ground_truth = ground_truths[k]
 
                     count += 1
@@ -131,7 +135,7 @@ def main(train, test):
                 {'valid': accs / count},
                 saveiter
             )
-            loger = f"[{saveiter}] Total Num: {count}, avg: {accs / count}"
+            loger = f"[{saveiter}] Total Num: {count}, avg: {accs / count}, loss: {sum_loss / len(dataset)}"
             outfile.write(loger)
             print(loger)
             writer.add_graph(net, data['face'])

@@ -118,7 +118,7 @@ class trainloader(Dataset):
 
     def __len__(self):
 
-        return len(self.data.line) - 3 # continuous 4 images as input
+        return len(self.data.line) -3 # continuous 4 images as input
 
     def __getitem__(self, idx):
 
@@ -128,25 +128,22 @@ class trainloader(Dataset):
         # anno = self.data.decode(line)
         lines = self.data.line[idx:idx+4]
         imgs = []
+        names = []
         for i, line in enumerate(lines):
             lines[i] = line.strip().split(" ")
             anno = self.data.decode(lines[i])
             
             img = cv2.imread(os.path.join(self.data.root, anno.face))
-            img = self.transforms(img)
-            img = img.unsqueeze(0)
             imgs.append(img)
+
+            names.append(anno.name)
 
         label = np.array(anno.gaze2d.split(",")).astype("float")
         label = torch.from_numpy(label).type(torch.FloatTensor)
 
-        img = imgs[0]
-        for i in range(1,4):
-            img = torch.cat((img,imgs[i]), dim=0)
-
         data = edict()
-        data.face = img
-        data.name = anno.name
+        data.face = self.transforms(imgs)
+        data.name = names
 
         return data, label
 

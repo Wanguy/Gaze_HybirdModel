@@ -35,7 +35,7 @@ def main(config):
     params = config.params
     average_loss_num = config.ave_loss
 
-    writer = SummaryWriter()
+    # writer = SummaryWriter()
 
     print("========================> Read Data <========================")
     if config.person is not None:
@@ -90,7 +90,8 @@ def main(config):
     total = length * params.epoch
     timer = ctools.TimeCounter(total)
 
-    criterion = nn.L1Loss()
+    # loss_func = nn.L1Loss()
+    loss_func = nn.MSELoss()
     optimizer.zero_grad()
     optimizer.step()
     scheduler.step()
@@ -102,17 +103,17 @@ def main(config):
 
         for epoch in range(1, params.epoch + 1):
             for i, (data, label) in enumerate(dataset):
-                if i >= 1000:
-                    break
+
                 # ------------------forward--------------------
                 # data["face"] = data["face"].to(device)
                 for key in data:
                     if key != 'name':
                         data[key] = data[key].to(device)
+                # label = label[-1]
                 label = label.to(device)
 
                 out = net(data['face']).to(device)
-                loss = criterion(out, label).to(device)
+                loss = loss_func(out, label).to(device)
 
                 # loss = net.module.loss(data, label).cuda()
                 # loss = net.loss(data, label)
